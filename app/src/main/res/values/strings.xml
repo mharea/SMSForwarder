@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">SmsForwarder</string>
+    <string name="relations">Relations</string>
+    <string name="relationName">Relation Name</string>
+    <string name="addButton">Add</string>
+    <string name="saveButton">Save</string>
 </resources>
