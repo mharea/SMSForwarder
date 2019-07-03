@@ -8,6 +8,7 @@
     <string name="saveButton">Save</string>
     <string name="deleteButton">Delete</string>
     <string name="cancelButton">Cancel</string>
+    <string name="viewDetailsButton">Details</string>
     <string name="welcome">Welcome</string>
     <string name="fromNumberTabItem">FROM_NUMBER</string>
     <string name="toNumberTabItem">TO_NUMBER</string>

@@ -12,9 +12,11 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.DeleteBuilder;
 import com.mobile.smsforwarder.model.Relation;
 import com.mobile.smsforwarder.util.ActivityRequestCode;
 import com.mobile.smsforwarder.util.DatabaseHelper;
@@ -43,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // This is how DatabaseHelper is initialized
     private DatabaseHelper getHelper() {
         if (databaseHelper == null) {
             databaseHelper = OpenHelperManager.getHelper(this, DatabaseHelper.class);
@@ -58,13 +59,12 @@ public class MainActivity extends AppCompatActivity {
         List<Relation> relations = null;
         try {
             relations = getHelper().getRelationDao().queryForAll();
-            //relations = getHelper().getRelationDao().queryBuilder().where().eq("name","ISD").query();
         } catch (SQLException e) {
             e.printStackTrace();
         }
         ArrayList<String> relationNames = new ArrayList<>();
         for (Relation r : relations)
-            relationNames.add(r.toString());
+            relationNames.add(r.getName());
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, relationNames);
         relationListView.setAdapter(adapter);
@@ -84,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
         TextView popupTextView = dialog.findViewById(R.id.titleTextView);
         Button cancelButton = dialog.findViewById(R.id.cancelButton);
         Button deleteButton = dialog.findViewById(R.id.deleteButton);
+        Button viewDetailsButton = dialog.findViewById(R.id.viewDetailsButton);
 
 
         popupTextView.setText("Relation " + relationName);
@@ -101,50 +102,43 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 try {
-                    Dao<Relation, Long> relationDao = getHelper().getRelationDao();
-                    String id = relationName.split(",")[0].split("=")[1];
-                    relationDao.deleteById(Long.valueOf(id));
-
+                    DeleteBuilder<Relation, Long> deleteBuilder = getHelper().getRelationDao().deleteBuilder();
+                    deleteBuilder.where().eq("name", relationName);
+                    deleteBuilder.delete();
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
 
 
+                Log.i("MainActivity", "deletedRelation=[" + relationName + "]");
+                Toast.makeText(getBaseContext(), "Relation [" + relationName + "]" + " was deleted.", Toast.LENGTH_LONG).show();
 
-                /*Log.i("MainActivity", "deletedNumber=[" + number + "], numberType=[" + NumberType.FROM_NUMBER.toString() + "]");
-                Toast.makeText(getBaseContext(),"Number [" + number + "] of type ["
-                        + chosenNumberType.toString() + "] was deleted.",Toast.LENGTH_LONG).show();
-                */
                 dialog.dismiss();
                 initData();
             }
         });
 
+        viewDetailsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                Intent addRelationIntent = new Intent(MainActivity.this, AddRelationActivity.class);
+                addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
+                addRelationIntent.putExtra(Relation.class.getName(), relationName);
+                startActivityForResult(addRelationIntent, ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
+                Log.i("MainActivity", "View Details button on popup_relation was clicked");
+            }
+        });
         dialog.show();
-    }
 
-
-    public void onClick_saveButton(View v) {
-        Relation relation = new Relation();
-        relation.setName("DSV-GROUP");
-        relation.setGendate("11-05-2005");
-
-        try {
-            final Dao<Relation, Long> relationDao = getHelper().getRelationDao();
-            relationDao.create(relation);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        initData();
     }
 
     public void onClick_addButton(View v) {
         Intent addRelationIntent = new Intent(MainActivity.this, AddRelationActivity.class);
-        //addRelationIntent.putExtra(NumberType.class.getName(), chosenNumberType.toString());
+        addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE);
         startActivityForResult(addRelationIntent, ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE);
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {

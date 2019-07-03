@@ -11,7 +11,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -35,15 +34,27 @@ import java.util.List;
 public class AddRelationActivity extends AppCompatActivity {
 
     private DatabaseHelper databaseHelper = null;
-
-    private int activeTabItem;
     private NumberType numberType = NumberType.FROM_NUMBER;
+    private Relation relation = null;
+
+    private Intent relationIntent;
+    private TabLayout tabLayout;
+    private ListView relationItemListView;
+    private EditText relationNameEditText;
+    private Button saveButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_relation);
-        TabLayout tabLayout = findViewById(R.id.tabLayout);
+
+        relationIntent = getIntent();
+
+        saveButton = findViewById(R.id.saveButton);
+        relationNameEditText = findViewById(R.id.relationNameEditText);
+        relationItemListView = findViewById(R.id.relationItemListView);
+        tabLayout = findViewById(R.id.tabLayout);
+
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
@@ -60,7 +71,7 @@ public class AddRelationActivity extends AppCompatActivity {
                     default:
                         numberType = null;
                 }
-                initData();
+                showDataInListView();
             }
 
             @Override
@@ -73,26 +84,33 @@ public class AddRelationActivity extends AppCompatActivity {
 
             }
         });
-
         initData();
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (databaseHelper != null) {
-            OpenHelperManager.releaseHelper();
-            databaseHelper = null;
+
+
+    public void initData() {
+
+        if (relationIntent.getExtras().getInt(ActivityRequestCode.class.getName()) == ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE) {
+            relationNameEditText.setEnabled(false);
+            saveButton.setEnabled(false);
+            relationNameEditText.setText(relationIntent.getExtras().getString(Relation.class.getName()));
+            showDataInListView();
+
+        } else {
+            tabLayout.setVisibility(View.GONE);
+            relationItemListView.setVisibility(View.GONE);
         }
     }
 
-    public void initData() {
-        ListView relationItemListView = findViewById(R.id.relationItemListView);
+    public void showDataInListView(){
 
         if (numberType != null) {
             List<Number> numbers = null;
             try {
-                numbers = getHelper().getNumberDao().queryBuilder().where().eq("type", numberType).query();
+                String relationName = relationNameEditText.getText().toString();
+                relation = getHelper().getRelationDao().queryBuilder().where().eq("name", relationName).query().get(0);
+                numbers = getHelper().getNumberDao().queryBuilder().where().eq("type", numberType).and().eq("relation_id", relation.getId()).query();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -106,7 +124,7 @@ public class AddRelationActivity extends AppCompatActivity {
         } else {
             List<Mail> mails = null;
             try {
-                mails = getHelper().getMailDao().queryForAll();
+                mails = getHelper().getMailDao().queryBuilder().where().eq("relation_id", relation.getId()).query();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -118,16 +136,18 @@ public class AddRelationActivity extends AppCompatActivity {
             relationItemListView.setAdapter(adapter);
         }
 
-
-//
-//        // set onClick event for every item of list
-//        relationListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                showPopup(((TextView) view).getText().toString());
-//            }
-//        });
     }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (databaseHelper != null) {
+            OpenHelperManager.releaseHelper();
+            databaseHelper = null;
+        }
+    }
+
 
 
     private DatabaseHelper getHelper() {
@@ -138,9 +158,7 @@ public class AddRelationActivity extends AppCompatActivity {
     }
 
     public void onClick_saveButton(View v) {
-        EditText relationNameEditText = findViewById(R.id.relationNameEditText);
-        Button saveButton = findViewById(R.id.saveButton);
-        Relation relation = new Relation(relationNameEditText.getText().toString(), new Date().toString());
+        relation = new Relation(relationNameEditText.getText().toString(), new Date().toString());
         try {
             Dao<Relation, Long> relationDao = getHelper().getRelationDao();
             relationDao.create(relation);
@@ -151,15 +169,16 @@ public class AddRelationActivity extends AppCompatActivity {
         relationNameEditText.setEnabled(false);
         saveButton.setEnabled(false);
 
+        tabLayout.setVisibility(View.VISIBLE);
+        relationItemListView.setVisibility(View.VISIBLE);
     }
 
     public void onClick_addButton(View v) {
-        if ( numberType != null) {
+        if (numberType != null) {
             Intent pickNumberIntent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
             //addRelationIntent.putExtra(NumberType.class.getName(), chosenNumberType.toString());
             startActivityForResult(pickNumberIntent, ActivityRequestCode.PICK_NUMBER_ACTIVITY_CODE);
-        }
-        else{
+        } else {
             showPopup();
         }
     }
@@ -180,7 +199,7 @@ public class AddRelationActivity extends AppCompatActivity {
                     //this way we exclude - ( ) and spaces from digits string
                     digits = digits.replaceAll("(?:(?:(?:-)|(?:(?:\\ ))|(?:(?:\\())|(?:(?:\\)))))", "");
                     saveNumber(name, digits);
-                    initData();
+                    showDataInListView();
 
                 }
 
@@ -190,13 +209,6 @@ public class AddRelationActivity extends AppCompatActivity {
     }
 
     public void saveNumber(String name, String digits) {
-
-        Relation relation = null;
-        try {
-            relation = getHelper().getRelationDao().queryForId(Long.valueOf(6));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
         Number number = new Number(name, digits, numberType, new Date().toString(), relation);
         try {
             getHelper().getNumberDao().create(number);
@@ -227,14 +239,11 @@ public class AddRelationActivity extends AppCompatActivity {
         });
 
 
-
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 try {
-                    Relation relation = null;
-                    relation = getHelper().getRelationDao().queryForId(Long.valueOf(9));
                     Mail mail = new Mail(mailNameEditText.getText().toString(), mailAddressEditText.getText().toString(), new Date().toString(), relation);
                     getHelper().getMailDao().create(mail);
 
@@ -251,7 +260,7 @@ public class AddRelationActivity extends AppCompatActivity {
                 */
                 dialog.dismiss();
 
-                initData();
+                showDataInListView();
             }
         });
 
