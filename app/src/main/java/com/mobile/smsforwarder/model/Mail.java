@@ -24,6 +24,12 @@ public class Mail {
     public Mail() {
     }
 
+    public Mail(String name, String address, String gendate, Relation relation) {
+        this.name = name;
+        this.address = address;
+        this.gendate = gendate;
+        this.relation = relation;
+    }
 
     public int getId() {
         return id;
@@ -63,5 +69,16 @@ public class Mail {
 
     public void setRelation(Relation relation) {
         this.relation = relation;
+    }
+
+    @Override
+    public String toString() {
+        return "Mail{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", address='" + address + '\'' +
+                ", gendate='" + gendate + '\'' +
+                ", relation=" + relation.getId() +
+                '}';
     }
 }

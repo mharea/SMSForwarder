@@ -1,12 +1,17 @@
 package com.mobile.smsforwarder;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.j256.ormlite.dao.Dao;
@@ -47,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void initData(){
+    public void initData() {
         ListView relationListView = findViewById(R.id.relationListView);
 
         List<Relation> relations = null;
@@ -63,6 +68,59 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, relationNames);
         relationListView.setAdapter(adapter);
+
+        // set onClick event for every item of list
+        relationListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                showPopup(((TextView) view).getText().toString());
+            }
+        });
+    }
+
+    public void showPopup(String relationName) {
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.popup_relation);
+        TextView popupTextView = dialog.findViewById(R.id.titleTextView);
+        Button cancelButton = dialog.findViewById(R.id.cancelButton);
+        Button deleteButton = dialog.findViewById(R.id.deleteButton);
+
+
+        popupTextView.setText("Relation " + relationName);
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("MainActivity", "Cancel button on popup_relation was clicked");
+                dialog.dismiss();
+            }
+        });
+
+
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                try {
+                    Dao<Relation, Long> relationDao = getHelper().getRelationDao();
+                    String id = relationName.split(",")[0].split("=")[1];
+                    relationDao.deleteById(Long.valueOf(id));
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+
+
+                /*Log.i("MainActivity", "deletedNumber=[" + number + "], numberType=[" + NumberType.FROM_NUMBER.toString() + "]");
+                Toast.makeText(getBaseContext(),"Number [" + number + "] of type ["
+                        + chosenNumberType.toString() + "] was deleted.",Toast.LENGTH_LONG).show();
+                */
+                dialog.dismiss();
+                initData();
+            }
+        });
+
+        dialog.show();
     }
 
 

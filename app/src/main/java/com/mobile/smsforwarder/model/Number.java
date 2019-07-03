@@ -23,6 +23,16 @@ public class Number {
     @DatabaseField(canBeNull = false, foreign = true, foreignAutoRefresh = true)
     private Relation relation;
 
+    public Number() {
+    }
+
+    public Number(String name, String digits, NumberType type, String gendate, Relation relation) {
+        this.name = name;
+        this.digits = digits;
+        this.type = type;
+        this.gendate = gendate;
+        this.relation = relation;
+    }
 
     public int getId() {
         return id;
@@ -70,5 +80,17 @@ public class Number {
 
     public void setRelation(Relation relation) {
         this.relation = relation;
+    }
+
+    @Override
+    public String toString() {
+        return "Number{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", digits='" + digits + '\'' +
+                ", type=" + type +
+                ", gendate='" + gendate + '\'' +
+                ", relation=" + relation.getId() +
+                '}';
     }
 }

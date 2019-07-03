@@ -2,6 +2,15 @@
     <string name="app_name">SmsForwarder</string>
     <string name="relations">Relations</string>
     <string name="relationName">Relation Name</string>
+    <string name="mailName">Mail Name</string>
+    <string name="mailAddress">Mail Address</string>
     <string name="addButton">Add</string>
     <string name="saveButton">Save</string>
+    <string name="deleteButton">Delete</string>
+    <string name="cancelButton">Cancel</string>
+    <string name="welcome">Welcome</string>
+    <string name="fromNumberTabItem">FROM_NUMBER</string>
+    <string name="toNumberTabItem">TO_NUMBER</string>
+    <string name="toMailTabItem">TO_MAIL</string>
+    <string name="popUpChooseAction">Choose the action you want to perform with that Relation</string>
 </resources>
