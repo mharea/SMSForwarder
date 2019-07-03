@@ -116,7 +116,7 @@ public class AddRelationActivity extends AppCompatActivity {
             }
             ArrayList<String> numberNames = new ArrayList<>();
             for (Number n : numbers)
-                numberNames.add(n.toString());
+                numberNames.add("Name: " + n.getName() + "\n" + "Number: " + n.getDigits());
 
             ArrayAdapter<String> adapter = new ArrayAdapter<>(AddRelationActivity.this, android.R.layout.simple_list_item_1, numberNames);
             relationItemListView.setAdapter(adapter);
@@ -130,7 +130,7 @@ public class AddRelationActivity extends AppCompatActivity {
             }
             ArrayList<String> mailsName = new ArrayList<>();
             for (Mail m : mails)
-                mailsName.add(m.toString());
+                mailsName.add("Name: " + m.getName() + "\n" + "Address: " + m.getAddress());
 
             ArrayAdapter<String> adapter = new ArrayAdapter<>(AddRelationActivity.this, android.R.layout.simple_list_item_1, mailsName);
             relationItemListView.setAdapter(adapter);
