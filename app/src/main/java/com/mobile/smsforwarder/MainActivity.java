@@ -17,6 +17,8 @@ import android.widget.Toast;
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
+import com.mobile.smsforwarder.model.Mail;
+import com.mobile.smsforwarder.model.Number;
 import com.mobile.smsforwarder.model.Relation;
 import com.mobile.smsforwarder.util.ActivityRequestCode;
 import com.mobile.smsforwarder.util.DatabaseHelper;
@@ -88,46 +90,48 @@ public class MainActivity extends AppCompatActivity {
 
 
         popupTextView.setText("Relation " + relationName);
-        cancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i("MainActivity", "Cancel button on popup_relation was clicked");
-                dialog.dismiss();
-            }
+        cancelButton.setOnClickListener(v -> {
+            Log.i("MainActivity", "Cancel button on popup_relation was clicked");
+            dialog.dismiss();
         });
 
+        deleteButton.setOnClickListener(v -> {
 
-        deleteButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            try {
+                Relation relation = getHelper().getRelationDao().queryBuilder().where().eq("name", relationName).query().get(0);
 
-                try {
-                    DeleteBuilder<Relation, Long> deleteBuilder = getHelper().getRelationDao().deleteBuilder();
-                    deleteBuilder.where().eq("name", relationName);
-                    deleteBuilder.delete();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+                DeleteBuilder<Number, Long> deleteNumberBuilder = getHelper().getNumberDao().deleteBuilder();
+                deleteNumberBuilder.where().eq("relation_id", relation.getId());
+                deleteNumberBuilder.delete();
+
+                DeleteBuilder<Mail, Long> deleteMailBuilder = getHelper().getMailDao().deleteBuilder();
+                deleteMailBuilder.where().eq("relation_id", relation.getId());
+                deleteMailBuilder.delete();
+
+                DeleteBuilder<Relation, Long> deleteRelationBuilder = getHelper().getRelationDao().deleteBuilder();
+                deleteRelationBuilder.where().eq("name", relationName);
+                deleteRelationBuilder.delete();
 
 
-                Log.i("MainActivity", "deletedRelation=[" + relationName + "]");
-                Toast.makeText(getBaseContext(), "Relation [" + relationName + "]" + " was deleted.", Toast.LENGTH_LONG).show();
-
-                dialog.dismiss();
-                initData();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
+
+
+            Log.i("MainActivity", "deletedRelation=[" + relationName + "]");
+            Toast.makeText(getBaseContext(), "Relation [" + relationName + "]" + " was deleted.", Toast.LENGTH_LONG).show();
+
+            dialog.dismiss();
+            initData();
         });
 
-        viewDetailsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                Intent addRelationIntent = new Intent(MainActivity.this, AddRelationActivity.class);
-                addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
-                addRelationIntent.putExtra(Relation.class.getName(), relationName);
-                startActivityForResult(addRelationIntent, ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
-                Log.i("MainActivity", "View Details button on popup_relation was clicked");
-            }
+        viewDetailsButton.setOnClickListener(v -> {
+            dialog.dismiss();
+            Intent addRelationIntent = new Intent(MainActivity.this, AddRelationActivity.class);
+            addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
+            addRelationIntent.putExtra(Relation.class.getName(), relationName);
+            startActivityForResult(addRelationIntent, ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
+            Log.i("MainActivity", "View Details button on popup_relation was clicked");
         });
         dialog.show();
 

@@ -11,14 +11,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.DeleteBuilder;
 import com.mobile.smsforwarder.model.Mail;
 import com.mobile.smsforwarder.model.Number;
 import com.mobile.smsforwarder.model.Relation;
@@ -49,7 +52,6 @@ public class AddRelationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add_relation);
 
         relationIntent = getIntent();
-
         saveButton = findViewById(R.id.saveButton);
         relationNameEditText = findViewById(R.id.relationNameEditText);
         relationItemListView = findViewById(R.id.relationItemListView);
@@ -84,9 +86,9 @@ public class AddRelationActivity extends AppCompatActivity {
 
             }
         });
+
         initData();
     }
-
 
 
     public void initData() {
@@ -103,7 +105,7 @@ public class AddRelationActivity extends AppCompatActivity {
         }
     }
 
-    public void showDataInListView(){
+    public void showDataInListView() {
 
         if (numberType != null) {
             List<Number> numbers = null;
@@ -136,6 +138,56 @@ public class AddRelationActivity extends AppCompatActivity {
             relationItemListView.setAdapter(adapter);
         }
 
+        // set onClick event for every item of list
+        relationItemListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                showPopup(((TextView) view).getText().toString().split("\n")[0].replace("Name: ", ""));
+            }
+        });
+    }
+
+
+    public void showPopup(String name) {
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.popup_relation_list_item);
+        TextView popupTextView = dialog.findViewById(R.id.infoTextView);
+        Button cancelButton = dialog.findViewById(R.id.cancelButton);
+        Button deleteButton = dialog.findViewById(R.id.deleteButton);
+
+        cancelButton.setOnClickListener(v -> {
+            Log.i("MainActivity", "Cancel button on popup_relation was clicked");
+            dialog.dismiss();
+        });
+
+        deleteButton.setOnClickListener(v -> {
+            if (numberType != null) {
+
+                try {
+                    DeleteBuilder<Number, Long> deleteNumberBuilder = getHelper().getNumberDao().deleteBuilder();
+                    deleteNumberBuilder.where().eq("relation_id", relation.getId()).and().eq("name", name).and().eq("type", numberType);
+                    deleteNumberBuilder.delete();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    DeleteBuilder<Mail, Long> deleteMailBuilder = getHelper().getMailDao().deleteBuilder();
+                    deleteMailBuilder.where().eq("relation_id", relation.getId()).and().eq("name", name);
+                    deleteMailBuilder.delete();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+//            Log.i("MainActivity", "deletedMail=[" + name + "]");
+//            Toast.makeText(getBaseContext(), "Mail [" + name + "]" + " was deleted.", Toast.LENGTH_LONG).show();
+
+            dialog.dismiss();
+            showDataInListView();
+        });
+
+        dialog.show();
     }
 
 
@@ -147,7 +199,6 @@ public class AddRelationActivity extends AppCompatActivity {
             databaseHelper = null;
         }
     }
-
 
 
     private DatabaseHelper getHelper() {
@@ -224,44 +275,27 @@ public class AddRelationActivity extends AppCompatActivity {
         TextView popupTextView = dialog.findViewById(R.id.infoTextView);
         EditText mailNameEditText = dialog.findViewById(R.id.mailNameEditText);
         EditText mailAddressEditText = dialog.findViewById(R.id.mailAddressEdixText);
-
         Button cancelButton = dialog.findViewById(R.id.cancelButton);
         Button saveButton = dialog.findViewById(R.id.saveButton);
 
-
         popupTextView.setText("Should add some text here");
-        cancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i("MainActivity", "Cancel button on popup_relation was clicked");
-                dialog.dismiss();
-            }
+        cancelButton.setOnClickListener(v -> {
+            Log.i("MainActivity", "Cancel button on popup_relation was clicked");
+            dialog.dismiss();
         });
 
 
-        saveButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        saveButton.setOnClickListener(v -> {
+            try {
+                Mail mail = new Mail(mailNameEditText.getText().toString(), mailAddressEditText.getText().toString(), new Date().toString(), relation);
+                getHelper().getMailDao().create(mail);
 
-                try {
-                    Mail mail = new Mail(mailNameEditText.getText().toString(), mailAddressEditText.getText().toString(), new Date().toString(), relation);
-                    getHelper().getMailDao().create(mail);
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-
-                /*
-                Log.i("MainActivity", "deletedNumber=[" + number + "], numberType=[" + NumberType.FROM_NUMBER.toString() + "]");
-                Toast.makeText(getBaseContext(),"Number [" + number + "] of type ["
-                        + chosenNumberType.toString() + "] was deleted.",Toast.LENGTH_LONG).show();
-
-                */
-                dialog.dismiss();
-
-                showDataInListView();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
+            dialog.dismiss();
+
+            showDataInListView();
         });
 
         dialog.show();
