@@ -15,6 +15,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
+import com.j256.ormlite.stmt.UpdateBuilder;
 import com.mobile.smsforwarder.model.Mail;
 import com.mobile.smsforwarder.model.Number;
 import com.mobile.smsforwarder.model.Relation;
@@ -39,12 +41,13 @@ public class AddRelationActivity extends AppCompatActivity {
     private DatabaseHelper databaseHelper = null;
     private NumberType numberType = NumberType.FROM_NUMBER;
     private Relation relation = null;
+    private int mode;
 
     private Intent relationIntent;
     private TabLayout tabLayout;
     private ListView relationItemListView;
     private EditText relationNameEditText;
-    private Button saveButton;
+    private ImageView saveButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,15 +97,42 @@ public class AddRelationActivity extends AppCompatActivity {
     public void initData() {
 
         if (relationIntent.getExtras().getInt(ActivityRequestCode.class.getName()) == ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE) {
+            mode = ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE;
+            /*
             relationNameEditText.setEnabled(false);
-            saveButton.setEnabled(false);
+            //saveButton.setEnabled(false);
+            */
             relationNameEditText.setText(relationIntent.getExtras().getString(Relation.class.getName()));
+
+            switchMode(mode);
             showDataInListView();
 
         } else {
+            mode = ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE;
+            switchMode(mode);
+            /*
+            tabLayout.setVisibility(View.GONE);
+            relationItemListView.setVisibility(View.GONE);
+            */
+        }
+    }
+
+    public void switchMode(int mode) {
+
+        if (mode == ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE) {
+            //view
+            relationNameEditText.setEnabled(false);
+            saveButton.setImageResource(R.drawable.ic_edit_black_48dp);
+            tabLayout.setVisibility(View.VISIBLE);
+            relationItemListView.setVisibility(View.VISIBLE);
+        } else {
+            //edit
+            relationNameEditText.setEnabled(true);
+            saveButton.setImageResource(R.drawable.ic_done_black_48dp);
             tabLayout.setVisibility(View.GONE);
             relationItemListView.setVisibility(View.GONE);
         }
+
     }
 
     public void showDataInListView() {
@@ -154,6 +184,8 @@ public class AddRelationActivity extends AppCompatActivity {
         TextView popupTextView = dialog.findViewById(R.id.infoTextView);
         Button cancelButton = dialog.findViewById(R.id.cancelButton);
         Button deleteButton = dialog.findViewById(R.id.deleteButton);
+
+        popupTextView.setText(String.format("Do you really want to delete %s number?", name));
 
         cancelButton.setOnClickListener(v -> {
             Log.i("MainActivity", "Cancel button on popup_relation was clicked");
@@ -209,19 +241,46 @@ public class AddRelationActivity extends AppCompatActivity {
     }
 
     public void onClick_saveButton(View v) {
-        relation = new Relation(relationNameEditText.getText().toString(), new Date().toString());
-        try {
-            Dao<Relation, Long> relationDao = getHelper().getRelationDao();
-            relationDao.create(relation);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+        switch (mode) {
+            case ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE:
+                relation = new Relation(relationNameEditText.getText().toString(), new Date().toString());
+                try {
+                    Dao<Relation, Long> relationDao = getHelper().getRelationDao();
+                    relationDao.create(relation);
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                break;
+
+            case ActivityRequestCode.UPDATE_RELATION_ACTIVITY_CODE:
+                UpdateBuilder<Relation, Long> relationUpdateBuilder;
+                try {
+                    relationUpdateBuilder = getHelper().getRelationDao().updateBuilder();
+                    relationUpdateBuilder.where().eq("id", relation.getId());
+                    relationUpdateBuilder.updateColumnValue("name", relationNameEditText.getText().toString());
+                    relationUpdateBuilder.update();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                break;
+            default:
+
         }
+
+        mode = (mode == ActivityRequestCode.UPDATE_RELATION_ACTIVITY_CODE || mode == ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE)
+                ? ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE : ActivityRequestCode.UPDATE_RELATION_ACTIVITY_CODE;
+
+        switchMode(mode);
+
+        /*
         relationNameEditText.setEnabled(false);
-        saveButton.setEnabled(false);
+        //saveButton.setEnabled(false);
 
         tabLayout.setVisibility(View.VISIBLE);
         relationItemListView.setVisibility(View.VISIBLE);
+        */
     }
 
     public void onClick_addButton(View v) {
@@ -283,7 +342,6 @@ public class AddRelationActivity extends AppCompatActivity {
             Log.i("MainActivity", "Cancel button on popup_relation was clicked");
             dialog.dismiss();
         });
-
 
         saveButton.setOnClickListener(v -> {
             try {
