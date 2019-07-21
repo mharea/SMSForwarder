@@ -241,6 +241,7 @@ public class AddRelationActivity extends AppCompatActivity {
     }
 
     public void onClick_saveButton(View v) {
+        // TODO add validation for Relation name, name should be unique
 
         switch (mode) {
             case ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE:
@@ -274,13 +275,6 @@ public class AddRelationActivity extends AppCompatActivity {
 
         switchMode(mode);
 
-        /*
-        relationNameEditText.setEnabled(false);
-        //saveButton.setEnabled(false);
-
-        tabLayout.setVisibility(View.VISIBLE);
-        relationItemListView.setVisibility(View.VISIBLE);
-        */
     }
 
     public void onClick_addButton(View v) {
@@ -295,6 +289,8 @@ public class AddRelationActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        // TODO add validation for numbers, we can't have same number in FROM and TO
+        // TODO add validation, we can't have the same number with same type in the same relation
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == ActivityRequestCode.PICK_NUMBER_ACTIVITY_CODE) {
@@ -329,6 +325,7 @@ public class AddRelationActivity extends AppCompatActivity {
 
 
     public void showPopup() {
+        // TODO email name should be displayed in popup
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.popup_add_mail);
         TextView popupTextView = dialog.findViewById(R.id.infoTextView);
