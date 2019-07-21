@@ -11,7 +11,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -36,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class AddRelationActivity extends AppCompatActivity {
+public class RelationActivity extends AppCompatActivity {
 
     private DatabaseHelper databaseHelper = null;
     private NumberType numberType = NumberType.FROM_NUMBER;
@@ -48,6 +47,8 @@ public class AddRelationActivity extends AppCompatActivity {
     private ListView relationItemListView;
     private EditText relationNameEditText;
     private ImageView saveButton;
+    private ImageView addButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +57,7 @@ public class AddRelationActivity extends AppCompatActivity {
 
         relationIntent = getIntent();
         saveButton = findViewById(R.id.saveButton);
+        addButton = findViewById(R.id.addButton);
         relationNameEditText = findViewById(R.id.relationNameEditText);
         relationItemListView = findViewById(R.id.relationItemListView);
         tabLayout = findViewById(R.id.tabLayout);
@@ -98,22 +100,13 @@ public class AddRelationActivity extends AppCompatActivity {
 
         if (relationIntent.getExtras().getInt(ActivityRequestCode.class.getName()) == ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE) {
             mode = ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE;
-            /*
-            relationNameEditText.setEnabled(false);
-            //saveButton.setEnabled(false);
-            */
             relationNameEditText.setText(relationIntent.getExtras().getString(Relation.class.getName()));
-
             switchMode(mode);
             showDataInListView();
 
         } else {
             mode = ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE;
             switchMode(mode);
-            /*
-            tabLayout.setVisibility(View.GONE);
-            relationItemListView.setVisibility(View.GONE);
-            */
         }
     }
 
@@ -123,12 +116,14 @@ public class AddRelationActivity extends AppCompatActivity {
             //view
             relationNameEditText.setEnabled(false);
             saveButton.setImageResource(R.drawable.ic_edit_black_48dp);
+            addButton.setVisibility(View.VISIBLE);
             tabLayout.setVisibility(View.VISIBLE);
             relationItemListView.setVisibility(View.VISIBLE);
         } else {
             //edit
             relationNameEditText.setEnabled(true);
             saveButton.setImageResource(R.drawable.ic_done_black_48dp);
+            addButton.setVisibility(View.GONE);
             tabLayout.setVisibility(View.GONE);
             relationItemListView.setVisibility(View.GONE);
         }
@@ -150,7 +145,7 @@ public class AddRelationActivity extends AppCompatActivity {
             for (Number n : numbers)
                 numberNames.add("Name: " + n.getName() + "\n" + "Number: " + n.getDigits());
 
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(AddRelationActivity.this, android.R.layout.simple_list_item_1, numberNames);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(RelationActivity.this, android.R.layout.simple_list_item_1, numberNames);
             relationItemListView.setAdapter(adapter);
 
         } else {
@@ -164,21 +159,18 @@ public class AddRelationActivity extends AppCompatActivity {
             for (Mail m : mails)
                 mailsName.add("Name: " + m.getName() + "\n" + "Address: " + m.getAddress());
 
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(AddRelationActivity.this, android.R.layout.simple_list_item_1, mailsName);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(RelationActivity.this, android.R.layout.simple_list_item_1, mailsName);
             relationItemListView.setAdapter(adapter);
         }
 
         // set onClick event for every item of list
-        relationItemListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                showPopup(((TextView) view).getText().toString().split("\n")[0].replace("Name: ", ""));
-            }
-        });
+        relationItemListView.setOnItemClickListener(
+                (parent, view, position, id) -> showNumberPopup(((TextView) view).getText().toString().split("\n")[0].replace("Name: ", ""))
+        );
     }
 
 
-    public void showPopup(String name) {
+    public void showNumberPopup(String name) {
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.popup_relation_list_item);
         TextView popupTextView = dialog.findViewById(R.id.infoTextView);
@@ -212,8 +204,8 @@ public class AddRelationActivity extends AppCompatActivity {
                 }
             }
 
-//            Log.i("MainActivity", "deletedMail=[" + name + "]");
-//            Toast.makeText(getBaseContext(), "Mail [" + name + "]" + " was deleted.", Toast.LENGTH_LONG).show();
+            Log.i("RelationActivity", "deletedNumber=[" + name + "]");
+            Toast.makeText(getBaseContext(), "Number [" + name + "]" + " was deleted.", Toast.LENGTH_LONG).show();
 
             dialog.dismiss();
             showDataInListView();
@@ -253,6 +245,9 @@ public class AddRelationActivity extends AppCompatActivity {
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
+
+                Log.i("RelationActivity", "relation=[" + relation.getName() + "] was created");
+                Toast.makeText(getBaseContext(), "Relation [" + relation.getName() + "]" + " was created.", Toast.LENGTH_LONG).show();
                 break;
 
             case ActivityRequestCode.UPDATE_RELATION_ACTIVITY_CODE:
@@ -283,7 +278,7 @@ public class AddRelationActivity extends AppCompatActivity {
             //addRelationIntent.putExtra(NumberType.class.getName(), chosenNumberType.toString());
             startActivityForResult(pickNumberIntent, ActivityRequestCode.PICK_NUMBER_ACTIVITY_CODE);
         } else {
-            showPopup();
+            showEmailPopup();
         }
     }
 
@@ -321,10 +316,12 @@ public class AddRelationActivity extends AppCompatActivity {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        Log.i("RelationActivity", "number=[" + name + " (" + digits + ")] was added.");
+        Toast.makeText(getBaseContext(), "Number " + name + " (" + digits + ") was added.", Toast.LENGTH_LONG).show();
     }
 
 
-    public void showPopup() {
+    public void showEmailPopup() {
         // TODO email name should be displayed in popup
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.popup_add_mail);
@@ -334,9 +331,9 @@ public class AddRelationActivity extends AppCompatActivity {
         Button cancelButton = dialog.findViewById(R.id.cancelButton);
         Button saveButton = dialog.findViewById(R.id.saveButton);
 
-        popupTextView.setText("Should add some text here");
+        popupTextView.setText("Create a new email (not implemented yet)");
         cancelButton.setOnClickListener(v -> {
-            Log.i("MainActivity", "Cancel button on popup_relation was clicked");
+            Log.i("RelationActivity", "Cancel button on emailPopup was clicked");
             dialog.dismiss();
         });
 

@@ -7,7 +7,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -15,7 +14,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.j256.ormlite.android.apptools.OpenHelperManager;
-import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.mobile.smsforwarder.model.Mail;
 import com.mobile.smsforwarder.model.Number;
@@ -35,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initData();
+        showDataInListView();
     }
 
     @Override
@@ -55,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void initData() {
+    public void showDataInListView() {
         ListView relationListView = findViewById(R.id.relationListView);
 
         List<Relation> relations = null;
@@ -72,22 +70,16 @@ public class MainActivity extends AppCompatActivity {
         relationListView.setAdapter(adapter);
 
         // set onClick event for every item of list
-        relationListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent addRelationIntent = new Intent(MainActivity.this, AddRelationActivity.class);
-                addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
-                addRelationIntent.putExtra(Relation.class.getName(), ((TextView) view).getText().toString());
-                startActivityForResult(addRelationIntent, ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);            }
-        });
+        relationListView.setOnItemClickListener((parent, view, position, id) -> {
+            Intent addRelationIntent = new Intent(MainActivity.this, RelationActivity.class);
+            addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
+            addRelationIntent.putExtra(Relation.class.getName(), ((TextView) view).getText().toString());
+            startActivityForResult(addRelationIntent, ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);            });
 
-        // set onClick event for every item of list
-        relationListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                showPopup(((TextView) view).getText().toString());
-                return true;
-            }
+        // set onLongClick event for every item of list
+        relationListView.setOnItemLongClickListener((parent, view, position, id) -> {
+            showPopup(((TextView) view).getText().toString());
+            return true;
         });
     }
 
@@ -132,14 +124,14 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getBaseContext(), "Relation [" + relationName + "]" + " was deleted.", Toast.LENGTH_LONG).show();
 
             dialog.dismiss();
-            initData();
+            showDataInListView();
         });
         dialog.show();
 
     }
 
     public void onClick_addButton(View v) {
-        Intent addRelationIntent = new Intent(MainActivity.this, AddRelationActivity.class);
+        Intent addRelationIntent = new Intent(MainActivity.this, RelationActivity.class);
         addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE);
         startActivityForResult(addRelationIntent, ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE);
     }
@@ -149,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE) {
-            initData();
+            showDataInListView();
         }
     }
 
