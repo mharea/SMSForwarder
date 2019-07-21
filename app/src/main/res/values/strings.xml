@@ -14,4 +14,6 @@
     <string name="toNumberTabItem">TO_NUMBER</string>
     <string name="toMailTabItem">TO_MAIL</string>
     <string name="popUpChooseAction">Choose the action you want to perform with that Relation</string>
+    <string name="deleteReaction">Do you really want do delete this Relation?</string>
+
 </resources>

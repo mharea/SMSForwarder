@@ -75,10 +75,22 @@ public class MainActivity extends AppCompatActivity {
         relationListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent addRelationIntent = new Intent(MainActivity.this, AddRelationActivity.class);
+                addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
+                addRelationIntent.putExtra(Relation.class.getName(), ((TextView) view).getText().toString());
+                startActivityForResult(addRelationIntent, ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);            }
+        });
+
+        // set onClick event for every item of list
+        relationListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 showPopup(((TextView) view).getText().toString());
+                return true;
             }
         });
     }
+
 
     public void showPopup(String relationName) {
         final Dialog dialog = new Dialog(this);
@@ -86,8 +98,6 @@ public class MainActivity extends AppCompatActivity {
         TextView popupTextView = dialog.findViewById(R.id.titleTextView);
         Button cancelButton = dialog.findViewById(R.id.cancelButton);
         Button deleteButton = dialog.findViewById(R.id.deleteButton);
-        Button viewDetailsButton = dialog.findViewById(R.id.viewDetailsButton);
-
 
         popupTextView.setText("Relation " + relationName);
         cancelButton.setOnClickListener(v -> {
@@ -123,15 +133,6 @@ public class MainActivity extends AppCompatActivity {
 
             dialog.dismiss();
             initData();
-        });
-
-        viewDetailsButton.setOnClickListener(v -> {
-            dialog.dismiss();
-            Intent addRelationIntent = new Intent(MainActivity.this, AddRelationActivity.class);
-            addRelationIntent.putExtra(ActivityRequestCode.class.getName(), ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
-            addRelationIntent.putExtra(Relation.class.getName(), relationName);
-            startActivityForResult(addRelationIntent, ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE);
-            Log.i("MainActivity", "View Details button on popup_relation was clicked");
         });
         dialog.show();
 
