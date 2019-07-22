@@ -294,11 +294,21 @@ public class RelationActivity extends AppCompatActivity {
                 Uri contactData = data.getData();
                 Cursor cursor = getContentResolver().query(contactData, null, null, null, null);
                 if (cursor.moveToFirst()) {
-                    String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+                    String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
                     String digits = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
                     //this way we exclude - ( ) and spaces from digits string
                     digits = digits.replaceAll("(?:(?:(?:-)|(?:(?:\\ ))|(?:(?:\\())|(?:(?:\\)))))", "");
+
+//                    //VBa
+//                    Uri uri = Uri.withAppendedPath(
+//                            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+//                            Uri.encode(digits));
+//                    String n = uri.getAuthority();
+//
+//                    //VBa
+
+
                     saveNumber(name, digits);
                     showDataInListView();
 

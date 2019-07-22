@@ -30,27 +30,24 @@ public class SFBroadcastReceiver extends BroadcastReceiver {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(intent.getAction())) {
             for (SmsMessage smsMessage : Telephony.Sms.Intents.getMessagesFromIntent(intent)) {
 
-                boolean isFromNumbers = false;
-//                numbers = getHelper().getNumberDao().queryBuilder().where().eq("type", numberType).and().eq("relation_id", relation.getId()).query();                List
-
                 List<Number> fromNumbers = null;
                 String from = smsMessage.getOriginatingAddress();
                 Log.i("SFBroadcastReceiver", "received message=[" + smsMessage.getMessageBody() + "], from=[" + from + "]");
 
                 try {
-                    fromNumbers = getHelper().getNumberDao().queryBuilder().where().eq("digits", from).query();
+                    fromNumbers = getHelper().getNumberDao().queryBuilder().
+                            where().eq("digits", from).
+                            and().eq("type", NumberType.FROM_NUMBER).query();
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
                 if (fromNumbers.size() > 0) {
                     Log.i("SFBroadcastReceiver", "we have registered [" + from + "], number");
-                    String message = "Message body: " + smsMessage.getMessageBody() + "\nMessage is redirected from contact: " + fromNumbers.get(0).getName() + " (" + fromNumbers.get(0).getDigits() + ")";
+                    String message ="Message: " + smsMessage.getMessageBody() + ". \nRedirected from: " + fromNumbers.get(0).getName() + " (" + fromNumbers.get(0).getDigits() + ")";
                     for (Number fromNumber : fromNumbers) {
                         sendMessage(fromNumber, message);
                     }
-
-                }
-                else {
+                } else {
                     Log.i("SFBroadcastReceiver", "!!! we don't have registered [" + from + "], number");
 
                 }
@@ -76,13 +73,20 @@ public class SFBroadcastReceiver extends BroadcastReceiver {
             List<Number> toNumbers = new ArrayList<>();
 
             try {
-                toNumbers = getHelper().getNumberDao().queryBuilder().where().eq("relation_id", relation.getId()).query();
+                toNumbers = getHelper().getNumberDao().queryBuilder().
+                        where().eq("relation_id", relation.getId())
+                        .and().eq("type", NumberType.TO_NUMBER).query();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
 
             for (Number toNumber : toNumbers) {
-                SmsManager.getDefault().sendTextMessage(toNumber.getDigits(), null, message, null, null);
+
+                SmsManager sms = SmsManager.getDefault();
+                ArrayList<String> parts = sms.divideMessage(message);
+                sms.sendMultipartTextMessage(toNumber.getDigits(), null, parts, null, null);
+
+                //SmsManager.getDefault().sendTextMessage(toNumber.getDigits(), null, message, null, null);
                 Log.i("SFBroadcastReceiver", "send message=[" + message + "], to contact: " + toNumber.getName() + " (" + toNumber.getDigits() + ")");
             }
 
