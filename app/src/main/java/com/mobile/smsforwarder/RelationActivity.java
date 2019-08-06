@@ -10,6 +10,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -48,6 +49,7 @@ public class RelationActivity extends AppCompatActivity {
     private EditText relationNameEditText;
     private ImageView saveButton;
     private ImageView addButton;
+    private ImageView addContactButton;
 
 
     @Override
@@ -58,6 +60,7 @@ public class RelationActivity extends AppCompatActivity {
         relationIntent = getIntent();
         saveButton = findViewById(R.id.saveButton);
         addButton = findViewById(R.id.addButton);
+        addContactButton = findViewById(R.id.addContactButton);
         relationNameEditText = findViewById(R.id.relationNameEditText);
         relationItemListView = findViewById(R.id.relationItemListView);
         tabLayout = findViewById(R.id.tabLayout);
@@ -75,6 +78,7 @@ public class RelationActivity extends AppCompatActivity {
                         break;
                     case 2:
                         numberType = null;
+
                     default:
                         numberType = null;
                 }
@@ -126,6 +130,7 @@ public class RelationActivity extends AppCompatActivity {
             addButton.setVisibility(View.GONE);
             tabLayout.setVisibility(View.GONE);
             relationItemListView.setVisibility(View.GONE);
+            addContactButton.setVisibility(View.GONE);
         }
 
     }
@@ -147,6 +152,7 @@ public class RelationActivity extends AppCompatActivity {
 
             ArrayAdapter<String> adapter = new ArrayAdapter<>(RelationActivity.this, android.R.layout.simple_list_item_1, numberNames);
             relationItemListView.setAdapter(adapter);
+            addContactButton.setVisibility(View.VISIBLE);
 
         } else {
             List<Mail> mails = null;
@@ -161,6 +167,7 @@ public class RelationActivity extends AppCompatActivity {
 
             ArrayAdapter<String> adapter = new ArrayAdapter<>(RelationActivity.this, android.R.layout.simple_list_item_1, mailsName);
             relationItemListView.setAdapter(adapter);
+            addContactButton.setVisibility(View.GONE);
         }
 
         // set onClick event for every item of list
@@ -233,14 +240,28 @@ public class RelationActivity extends AppCompatActivity {
     }
 
     public void onClick_saveButton(View v) {
-        // TODO add validation for Relation name, name should be unique
+        boolean checkMode = true;
 
         switch (mode) {
             case ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE:
                 relation = new Relation(relationNameEditText.getText().toString(), new Date().toString());
+                List<Relation> existingRelations = new ArrayList<>();
                 try {
                     Dao<Relation, Long> relationDao = getHelper().getRelationDao();
-                    relationDao.create(relation);
+                    existingRelations = relationDao.queryBuilder().where().eq("name", relationNameEditText.getText().toString()).query();
+                    if(existingRelations.size()==0){
+                        relationDao.create(relation);
+                    }
+                    else{
+                        Log.i("RelationActivity", "relation=[" + relationNameEditText.getText().toString() + "] name already exists");
+                        Toast toast = Toast.makeText(getBaseContext(), "Relation [" + relation.getName() + "]" + " name already exists.", Toast.LENGTH_LONG);
+                        toast.setGravity(Gravity.TOP|Gravity.CENTER_HORIZONTAL, 0, 0);
+                        toast.show();
+                        mode = ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE;
+                        checkMode = false;
+                        relationNameEditText.setText("");
+                        break;
+                    }
 
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -265,20 +286,27 @@ public class RelationActivity extends AppCompatActivity {
 
         }
 
-        mode = (mode == ActivityRequestCode.UPDATE_RELATION_ACTIVITY_CODE || mode == ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE)
-                ? ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE : ActivityRequestCode.UPDATE_RELATION_ACTIVITY_CODE;
-
+        if(checkMode) {
+            mode = (mode == ActivityRequestCode.UPDATE_RELATION_ACTIVITY_CODE || mode == ActivityRequestCode.ADD_RELATION_ACTIVITY_CODE)
+                    ? ActivityRequestCode.VIEW_RELATION_ACTIVITY_CODE : ActivityRequestCode.UPDATE_RELATION_ACTIVITY_CODE;
+        }
         switchMode(mode);
 
     }
 
     public void onClick_addButton(View v) {
         if (numberType != null) {
-            Intent pickNumberIntent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
-            //addRelationIntent.putExtra(NumberType.class.getName(), chosenNumberType.toString());
-            startActivityForResult(pickNumberIntent, ActivityRequestCode.PICK_NUMBER_ACTIVITY_CODE);
+            showPhoneNumberPopup();
         } else {
             showEmailPopup();
+        }
+    }
+
+    public void onClick_addContactButton(View v){
+        if(numberType != null){
+//           Intent pickNumberIntent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
+            Intent pickNumberIntent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+           startActivityForResult(pickNumberIntent, ActivityRequestCode.PICK_NUMBER_ACTIVITY_CODE);
         }
     }
 
@@ -363,5 +391,37 @@ public class RelationActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    public void showPhoneNumberPopup() {
+        // TODO email name should be displayed in popup
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.popup_add_number);
+        TextView popupTextView = dialog.findViewById(R.id.infoTextView);
+        EditText nameEditText = dialog.findViewById(R.id.nameEditText);
+        EditText numberEditText = dialog.findViewById(R.id.numberEditText);
+        Button cancelButton = dialog.findViewById(R.id.cancelButton);
+        Button saveButton = dialog.findViewById(R.id.saveButton);
+
+        popupTextView.setText("Add new number");
+        cancelButton.setOnClickListener(v -> {
+            Log.i("RelationActivity", "Cancel button on addNumberPopup was clicked");
+            dialog.dismiss();
+        });
+
+        saveButton.setOnClickListener(v -> {
+            try {
+                Number number = new Number(nameEditText.getText().toString(), numberEditText.getText().toString(),numberType,new Date().toString(),relation);
+//                number = new Number(nameEditText.getText().toString(), numberEditText.getText().toString(),numberType,new Date().toString(),relation);
+                getHelper().getNumberDao().create(number);
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            dialog.dismiss();
+
+            showDataInListView();
+        });
+
+        dialog.show();
+    }
 
 }

@@ -97,4 +97,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/ic_add_circle_black_24dp" />
 
+    <ImageView
+        android:id="@+id/addContactButton"
+        android:layout_width="@android:dimen/app_icon_size"
+        android:layout_height="@android:dimen/app_icon_size"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="32dp"
+        android:onClick="onClick_addContactButton"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/addButton"
+        app:srcCompat="@drawable/ic_person_add_black_24dp" />
+
 </android.support.constraint.ConstraintLayout>

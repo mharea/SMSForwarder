@@ -15,5 +15,6 @@
     <string name="toMailTabItem">TO_MAIL</string>
     <string name="popUpChooseAction">Choose the action you want to perform with that Relation</string>
     <string name="deleteReaction">Do you really want do delete this Relation?</string>
-
+    <string name="phoneNumber">Phone number</string>
+    <string name="nameForNumber">Name</string>
 </resources>

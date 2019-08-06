@@ -33,6 +33,7 @@
 
         <receiver
             android:name=".util.SFBroadcastReceiver"
+            android:permission="android.permission.BROADCAST_SMS"
             android:enabled="true"
             android:exported="true">
             <intent-filter>

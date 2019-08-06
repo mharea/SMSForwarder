@@ -9,7 +9,7 @@ public class Relation {
     @DatabaseField(generatedId = true)
     private int id;
 
-    @DatabaseField(canBeNull = false)
+    @DatabaseField(canBeNull = false, unique = true)
     private String name;
 
     @DatabaseField
