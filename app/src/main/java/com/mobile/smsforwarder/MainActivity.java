@@ -1,6 +1,7 @@
 package com.mobile.smsforwarder;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
 
     private DatabaseHelper databaseHelper = null;
     private final static int SMS_PERMISSION_CODE = 10;
+    private final static int DATA_PERMISSION_CODE = 10;
 
     /**
      * Check if we have SMS permission
@@ -46,6 +48,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * Check if we have DATA usage permission
+     */
+    public boolean isDataPermissionGranted() {
+        boolean isInternetAccessAllowed = false;
+        isInternetAccessAllowed = ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED;
+        return isInternetAccessAllowed;
+    }
+
+    /**
      * Request runtime SMS permission
      */
     private void requestReadAndSendSmsPermission() {
@@ -54,11 +65,22 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, SMS_PERMISSION_CODE);
     }
 
+    /**
+     * Request runtime DATA permission
+     */
+    private void requestDataAccessPermission() {
+
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.INTERNET}, DATA_PERMISSION_CODE);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if(!isSmsPermissionGranted()){
             requestReadAndSendSmsPermission();
+        }
+        if(!isDataPermissionGranted()){
+            requestDataAccessPermission();
         }
         setContentView(R.layout.activity_main);
         showDataInListView();
@@ -112,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    @SuppressLint("SetTextI18n")
     public void showPopup(String relationName) {
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.popup_relation);
