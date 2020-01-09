@@ -1,6 +1,7 @@
 package com.mobile.smsforwarder;
 
 import android.app.Dialog;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -17,6 +18,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -320,27 +322,37 @@ public class RelationActivity extends AppCompatActivity {
 
             if (resultCode == RESULT_OK) {
                 Uri contactData = data.getData();
+
                 Cursor cursor = getContentResolver().query(contactData, null, null, null, null);
-                if (cursor.moveToFirst()) {
+/*                if (cursor.moveToFirst()) {
                     String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
-                    String digits = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                    String digits = "";
+                    if(cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.HAS_PHONE_NUMBER)).length() > 1) {
+                        digits = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                    }
 
-                    //this way we exclude - ( ) and spaces from digits string
                     digits = digits.replaceAll("(?:(?:(?:-)|(?:(?:\\ ))|(?:(?:\\())|(?:(?:\\)))))", "");
-
-//                    //VBa
-//                    Uri uri = Uri.withAppendedPath(
-//                            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-//                            Uri.encode(digits));
-//                    String n = uri.getAuthority();
-//
-//                    //VBa
-
 
                     saveNumber(name, digits);
                     showDataInListView();
 
+                }*/
+                final ContentResolver contentResolver = getContentResolver();
+                String[] projection = new String[]{ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.Contacts.HAS_PHONE_NUMBER};
+                final Cursor cursor1 = contentResolver.query(ContactsContract.Data.CONTENT_URI, projection, null, null, null);
+                if(cursor1.getInt(cursor1.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) ==  1){
+                    String id = String.valueOf(cursor.getLong(cursor.getColumnIndex(ContactsContract.Contacts._ID)));
+                    Cursor phoneCursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = ?", new String[] {id}, null);
+                    while (phoneCursor.moveToNext()) {
+                        String phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        String normalizedPhoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER));
+                        Log.v("myapp", "phone # - " + phoneNumber);
+                        Log.v("myapp", "normalized phone # - " + normalizedPhoneNumber);
+                        saveNumber(id, phoneNumber);
+                    }
                 }
+
+                showDataInListView();
 
             }
 
