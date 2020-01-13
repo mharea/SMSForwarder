@@ -34,7 +34,7 @@ public class SFBroadcastReceiver extends BroadcastReceiver {
     String mailText;
     String emailStringList;
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+//    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.i("SFBroadcastReceiver", "enter onReceive() with intentAction=[" + intent.getAction() + "]");

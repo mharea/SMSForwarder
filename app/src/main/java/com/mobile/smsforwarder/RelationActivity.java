@@ -1,10 +1,12 @@
 package com.mobile.smsforwarder;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
@@ -26,6 +28,7 @@ import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.UpdateBuilder;
+import com.mobile.smsforwarder.model.Contact;
 import com.mobile.smsforwarder.model.Mail;
 import com.mobile.smsforwarder.model.Number;
 import com.mobile.smsforwarder.model.Relation;
@@ -322,6 +325,7 @@ public class RelationActivity extends AppCompatActivity {
 
             if (resultCode == RESULT_OK) {
                 Uri contactData = data.getData();
+                Contact contact;
 
                 Cursor cursor = getContentResolver().query(contactData, null, null, null, null);
 /*                if (cursor.moveToFirst()) {
@@ -337,20 +341,44 @@ public class RelationActivity extends AppCompatActivity {
                     showDataInListView();
 
                 }*/
-                final ContentResolver contentResolver = getContentResolver();
-                String[] projection = new String[]{ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.Contacts.HAS_PHONE_NUMBER};
-                final Cursor cursor1 = contentResolver.query(ContactsContract.Data.CONTENT_URI, projection, null, null, null);
-                if(cursor1.getInt(cursor1.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) ==  1){
-                    String id = String.valueOf(cursor.getLong(cursor.getColumnIndex(ContactsContract.Contacts._ID)));
-                    Cursor phoneCursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = ?", new String[] {id}, null);
-                    while (phoneCursor.moveToNext()) {
-                        String phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        String normalizedPhoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER));
-                        Log.v("myapp", "phone # - " + phoneNumber);
-                        Log.v("myapp", "normalized phone # - " + normalizedPhoneNumber);
-                        saveNumber(id, phoneNumber);
-                    }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, 100);
                 }
+                String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.CommonDataKinds.Identity.DISPLAY_NAME};
+                Cursor cursor1 = getApplicationContext().getContentResolver().query(contactData, null, null, null, null);
+                if (cursor1 != null && cursor1.moveToFirst()) {
+                    int numberIndex = cursor1.getColumnIndex(ContactsContract.Contacts._ID);
+                    String contactId = cursor1.getString(numberIndex);
+                    contact = Contact.from(contactId);
+                    int nameColumnIndex = cursor1.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
+                    String contactName = cursor1.getString(nameColumnIndex);
+                    contact.setContactName(contactName);
+
+                    Cursor numberCursor = getApplicationContext().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?", new String[]{contact.getContactId()}, null);
+
+                    if (numberCursor != null && numberCursor.moveToFirst()) {
+                        int phoneNumberIndex = numberCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                        contact.setContactMobileNumber(numberCursor.getString(phoneNumberIndex));
+                    }
+                    Log.i("CONTACT_NAME", contact.getContactName());
+                    Log.i("CONTACT_NUMBER", contact.getContactMobileNumber());
+                    saveNumber(contact.getContactName(), contact.getContactMobileNumber().replaceAll("\\s",""));
+                }
+//                final ContentResolver contentResolver = getContentResolver();
+//                String[] projection = new String[]{ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.Contacts.HAS_PHONE_NUMBER};
+//                final Cursor cursor1 = contentResolver.query(ContactsContract.Data.CONTENT_URI, projection, null, null, null);
+//                if(cursor1.getInt(cursor1.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) ==  1){
+//                    String id = String.valueOf(cursor.getLong(cursor.getColumnIndex(ContactsContract.Contacts._ID)));
+//                    Cursor phoneCursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = ?", new String[] {id}, null);
+//                    while (phoneCursor.moveToNext()) {
+//                        String phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+//                        String normalizedPhoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER));
+//                        Log.v("myapp", "phone # - " + phoneNumber);
+//                        Log.v("myapp", "normalized phone # - " + normalizedPhoneNumber);
+//                        saveNumber(id, phoneNumber);
+//                    }
+//                }
 
                 showDataInListView();
 
